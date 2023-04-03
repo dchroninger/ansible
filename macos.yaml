@@ -1,0 +1,99 @@
+- hosts: localhost
+  become: true
+  tasks:
+    - name: Install homebrew
+      tags: [
+        macos
+        ]
+      include_role:
+        name: geerlingguy.homebrew
+
+    - name: Homebrew Taps
+      tags: [
+        macos
+        ]
+      community.general.homebrew_tap:
+        name: [
+          isen-ng/dotnet-sdk-versions,
+          ]
+
+    - name: Install core packages via brew casks
+      tags: [
+        macos
+        ]
+      community.general.homebrew_cask:
+        name: "{{ item }}"
+      ignore_errors: yes
+      with_items:
+        - alfred
+        - insomnia
+        - spotify
+        - discord
+        - obsidian
+        - dotnet-sdk
+        - dotnet-sdk6-0-400
+
+    - name: Install homebrew packages
+      tags: [
+          macos
+          ]
+      community.general.homebrew:
+        name: [
+          ansible,
+          colima,
+          docker-compose,
+          mas,
+          stow,
+          tmux,
+          nvm,
+          git,
+          npm,
+          pnpm
+         ]
+
+    - name: Install Mac Store Apps
+      tags: [
+        macos
+       ]
+      shell: mas install {{ item }}
+      with_items:
+        - 1295203466 # Microsoft remote desktop
+        - 497799835 # xcode
+        - 1444383602 # GoodNotes 5
+        - 442160987 # Flycut
+        - 441258766 # Magnet
+        - 1502839586 # Hand Mirror
+        - 803453959 # Slack
+
+    - name: Install Oh My ZSH
+      tags: [
+        zsh,
+        ubuntu
+        ]
+      shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+      args:
+        creates: "/Users/{{ lookup('env', 'USER') }}/.oh-my-zsh"
+
+    - name: Set ZSH as the default shell
+      tags: [
+        zsh,
+        ubuntu
+       ]
+      shell: chsh -s $(which zsh) {{ lookup('env', 'USER') }}
+      become: true
+
+    - name: "Create a default ZSH configuration"
+      tags: [
+        zsh,
+        ubuntu
+       ]
+      template:
+        src: templates/.zshrc.j2
+        dest: /Users/{{ lookup('env', 'USER') }}/.zshrc
+        owner: "{{ lookup('env', 'USER') }}"
+        force: yes
+
+    - name: Install zsh autosuggestions plugin
+      ansible.builtin.git:
+        repo: 'https://github.com/zsh-users/zsh-autosuggestions.git'
+        dest: "~/.oh-my-zsh/plugins/zsh-autosuggestions"
